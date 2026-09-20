@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { getUser, teachSkills, learnSkills, getSkill, type Exchange, type Task } from "@/lib/data";
+import { getUser, teachSkills, learnSkills, getSkill, exchange as seedExchange, type Task } from "@/lib/data";
+import { useStore } from "@/lib/store";
 import { Avatar, LevelDots } from "@/components/ui";
 
 const STATUS: Record<Task["status"], { label: string; cls: string }> = {
@@ -11,30 +12,49 @@ const STATUS: Record<Task["status"], { label: string; cls: string }> = {
   done: { label: "已完成", cls: "bg-emerald-500/15 text-emerald-300" },
 };
 
-export default function ExchangeView({ exchange }: { exchange: Exchange }) {
+const ACTION: Record<Task["status"], string> = {
+  todo: "开始",
+  doing: "完成",
+  confirm: "确认完成",
+  done: "已完成",
+};
+
+export default function ExchangeView({ exchangeId }: { exchangeId: string }) {
+  const { exchanges, advanceTask, currentUserId } = useStore();
+  const exchange = exchanges.find((e) => e.id === exchangeId) ?? seedExchange;
+  const tasks = exchange.tasks;
   const a = getUser(exchange.a);
   const b = getUser(exchange.b);
-  const [tasks, setTasks] = useState<Task[]>(exchange.tasks);
   const [toast, setToast] = useState<string | null>(null);
+
+  // 以当前用户视角渲染「你」与「伙伴」
+  const iAmA = currentUserId === exchange.a;
+  const me = iAmA ? a : b;
+  const other = iAmA ? b : a;
+  const meTeaches = iAmA ? exchange.teachAB : exchange.teachBA;
+  const otherTeaches = iAmA ? exchange.teachBA : exchange.teachAB;
 
   const doneCount = tasks.filter((t) => t.status === "done").length;
   const progress = Math.round((doneCount / tasks.length) * 100);
 
-  function confirm(taskId: string) {
-    const t = tasks.find((x) => x.id === taskId);
-    if (!t) return;
-    setTasks((prev) => prev.map((x) => (x.id === taskId ? { ...x, status: "done" } : x)));
-    const isTeach = t.by === exchange.a;
-    setToast(isTeach ? `✅ 完成教学，+${t.coin} Skill Coin` : `✅ 确认学习，-${t.coin} Skill Coin`);
-    setTimeout(() => setToast(null), 2500);
+  function handleAdvance(taskId: string) {
+    const res = advanceTask(taskId);
+    if (res?.settled) {
+      setToast(
+        res.isTeach
+          ? `✅ 完成教学，+${res.coin} Skill Coin`
+          : `✅ 确认学习，-${res.coin} Skill Coin`
+      );
+      setTimeout(() => setToast(null), 2500);
+    }
   }
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       {/* 双方信息 */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <UserCard user={a} role="你" teach={exchange.teachAB} />
-        <UserCard user={b} role="伙伴" teach={exchange.teachBA} />
+        <UserCard user={me} role="你" teach={meTeaches} />
+        <UserCard user={other} role="伙伴" teach={otherTeaches} />
       </div>
 
       {/* 交换目标 */}
@@ -90,12 +110,12 @@ export default function ExchangeView({ exchange }: { exchange: Exchange }) {
                   </div>
                 </div>
                 <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${st.cls}`}>{st.label}</span>
-                {t.status === "confirm" && t.for === exchange.a && (
+                {t.status !== "done" && (
                   <button
-                    onClick={() => confirm(t.id)}
+                    onClick={() => handleAdvance(t.id)}
                     className="btn-primary rounded-xl px-4 py-2 text-sm font-semibold"
                   >
-                    确认完成
+                    {ACTION[t.status]}
                   </button>
                 )}
               </div>

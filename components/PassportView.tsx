@@ -1,3 +1,5 @@
+"use client";
+
 import {
   getUser,
   getSkill,
@@ -6,20 +8,24 @@ import {
   badges,
   ratings,
 } from "@/lib/data";
+import { useStore } from "@/lib/store";
 import { Avatar, LevelBar, SkillTag } from "@/components/ui";
 
 export default function PassportView({ userId }: { userId: string }) {
   const u = getUser(userId);
-  const teach = teachSkills(userId);
-  const learn = learnSkills(userId);
+  const store = useStore();
+  const isMe = userId === store.currentUserId;
+  const statsData = isMe ? store.stats : u.stats;
+  const coin = isMe ? store.coin : u.coin;
+  const teach = isMe ? store.skillsOf(userId, "teach") : teachSkills(userId);
+  const learn = isMe ? store.skillsOf(userId, "learn") : learnSkills(userId);
   const received = ratings.filter((r) => r.to === userId);
-  const isMe = userId === "alex";
 
   const stats = [
-    { label: "教学次数", value: u.stats.teaching },
-    { label: "学习时长", value: `${u.stats.hours}h` },
-    { label: "完成任务", value: u.stats.tasks },
-    { label: "完成交换", value: u.stats.exchanges },
+    { label: "教学次数", value: statsData.teaching },
+    { label: "学习时长", value: `${statsData.hours}h` },
+    { label: "完成任务", value: statsData.tasks },
+    { label: "完成交换", value: statsData.exchanges },
   ];
 
   return (
@@ -42,7 +48,7 @@ export default function PassportView({ userId }: { userId: string }) {
             <p className="mt-1 text-zinc-400">{u.handle} · {u.bio}</p>
             <div className="mt-4 flex flex-wrap justify-center gap-2 sm:justify-start">
               <span className="rounded-full glass px-3 py-1 text-sm">
-                <span className="text-amber-300">●</span> {u.coin} Skill Coin
+                <span className="text-amber-300">●</span> {coin} Skill Coin
               </span>
               {u.times.map((t) => (
                 <span key={t} className="rounded-full glass px-3 py-1 text-sm text-zinc-300">

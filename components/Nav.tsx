@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { currentUserId, getUser } from "@/lib/data";
+import { useStore } from "@/lib/store";
+import { users } from "@/lib/data";
 
 const links = [
   { href: "/", label: "首页" },
@@ -17,7 +18,7 @@ const links = [
 
 export default function Nav() {
   const pathname = usePathname();
-  const me = getUser(currentUserId);
+  const { coin, currentUserId, switchUser } = useStore();
 
   return (
     <header className="sticky top-0 z-50 border-b border-white/5 bg-[#05050a]/70 backdrop-blur-xl">
@@ -53,12 +54,24 @@ export default function Nav() {
           })}
         </nav>
 
+        <select
+          value={currentUserId}
+          onChange={(e) => switchUser(e.target.value)}
+          className="hidden shrink-0 rounded-full glass px-3 py-1.5 text-sm text-zinc-200 outline-none transition-colors hover:border-white/20 md:block"
+        >
+          {users.map((u) => (
+            <option key={u.id} value={u.id} className="bg-[#0b0b12]">
+              {u.emoji} {u.name}
+            </option>
+          ))}
+        </select>
+
         <Link
           href="/coins"
           className="hidden shrink-0 items-center gap-2 rounded-full glass px-3 py-1.5 text-sm transition-colors hover:border-white/20 sm:flex"
         >
           <span className="text-amber-300">●</span>
-          <span className="font-semibold">{me.coin}</span>
+          <span className="font-semibold">{coin}</span>
           <span className="text-zinc-400">Coin</span>
         </Link>
       </div>

@@ -1,23 +1,78 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   getUser,
   getSkill,
   teachSkills,
   learnSkills,
   matches,
+  type Match,
 } from "@/lib/data";
+import { useStore } from "@/lib/store";
 import { Avatar, LevelDots, SkillTag } from "@/components/ui";
 
 export default function MatchPage() {
+  const router = useRouter();
+  const { createExchange, currentUserId } = useStore();
+  const [matchList, setMatchList] = useState<Match[]>(matches);
+  const [loading, setLoading] = useState(false);
+  const [starting, setStarting] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch(`/api/match?userId=${currentUserId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && Array.isArray(d.matches) && d.matches.length) {
+          setMatchList(d.matches);
+        }
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId]);
+
+  async function startExchange(partnerId: string) {
+    setStarting(partnerId);
+    let id: string | null = null;
+    try {
+      const res = await fetch("/api/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: currentUserId, partnerId }),
+      });
+      const data = await res.json();
+      if (data?.exchange?.id) {
+        id = createExchange(partnerId, data.exchange);
+      }
+    } catch {
+      // 降级到同步 Mock
+    }
+    if (!id) {
+      id = createExchange(partnerId);
+    }
+    setStarting(null);
+    router.push(`/exchanges/${id}`);
+  }
+
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
       <h1 className="text-2xl font-bold">AI 智能匹配</h1>
       <p className="mt-1 text-zinc-400">
         不只是分数——AI 告诉你 <span className="text-violet-300">为什么匹配</span>
+        {loading && <span className="ml-2 text-xs text-zinc-500">AI 分析中…</span>}
       </p>
 
       <div className="mt-6 space-y-5">
-        {matches.map((m) => {
+        {matchList.map((m) => {
           const u = getUser(m.userId);
           const teach = teachSkills(m.userId);
           const learn = learnSkills(m.userId);
@@ -78,12 +133,13 @@ export default function MatchPage() {
                   )}
 
                   <div className="mt-4 flex gap-3">
-                    <Link
-                      href="/exchanges/alex-mia"
-                      className="btn-primary rounded-xl px-5 py-2.5 text-sm font-semibold"
+                    <button
+                      onClick={() => startExchange(m.userId)}
+                      disabled={starting === m.userId}
+                      className="btn-primary rounded-xl px-5 py-2.5 text-sm font-semibold disabled:opacity-60"
                     >
-                      开始交换
-                    </Link>
+                      {starting === m.userId ? "生成计划中…" : "开始交换"}
+                    </button>
                     <Link
                       href={`/passport/${m.userId}`}
                       className="rounded-xl glass px-5 py-2.5 text-sm font-semibold text-zinc-200 hover:text-white"

@@ -1,17 +1,39 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  currentUserId,
   getUser,
   getSkill,
   teachSkills,
   matches,
   loops,
   exchange,
+  type Match,
 } from "@/lib/data";
+import { useStore } from "@/lib/store";
 import { Avatar, SkillTag } from "@/components/ui";
 
 export default function Home() {
   const loop = loops[0];
+  const { tasks, exchanges, currentUserId } = useStore();
+  const primaryId = exchanges[0]?.id ?? exchange.id;
+  const [matchList, setMatchList] = useState<Match[]>(matches);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch(`/api/match?userId=${currentUserId}`)
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && Array.isArray(d.matches) && d.matches.length) {
+          setMatchList(d.matches);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [currentUserId]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -65,7 +87,7 @@ export default function Home() {
               查看全部 →
             </Link>
           </div>
-          {matches.slice(0, 2).map((m) => {
+          {matchList.slice(0, 2).map((m) => {
             const u = getUser(m.userId);
             const teach = teachSkills(m.userId);
             return (
@@ -116,7 +138,7 @@ export default function Home() {
           <div className="glass rounded-2xl p-5">
             <h3 className="font-bold">今日学习任务</h3>
             <ul className="mt-3 space-y-3">
-              {exchange.tasks
+              {tasks
                 .filter((t) => t.status !== "done")
                 .slice(0, 3)
                 .map((t) => (
@@ -128,7 +150,7 @@ export default function Home() {
                 ))}
             </ul>
             <Link
-              href={`/exchanges/${exchange.id}`}
+              href={`/exchanges/${primaryId}`}
               className="btn-primary mt-4 block rounded-xl py-2.5 text-center text-sm font-semibold"
             >
               进入交换 →

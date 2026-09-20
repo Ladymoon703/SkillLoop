@@ -1,10 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { exchange, getUser } from "@/lib/data";
+import { useStore } from "@/lib/store";
+import { getUser } from "@/lib/data";
 import { Avatar } from "@/components/ui";
 
 export default function ExchangesPage() {
-  const a = getUser(exchange.a);
-  const b = getUser(exchange.b);
+  const { exchanges } = useStore();
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -12,34 +14,43 @@ export default function ExchangesPage() {
       <p className="mt-1 text-zinc-400">进行中的技能交换</p>
 
       <div className="mt-6 space-y-4">
-        <Link
-          href={`/exchanges/${exchange.id}`}
-          className="glass glass-hover block rounded-3xl p-6"
-        >
-          <div className="flex items-center justify-between">
-            <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
-              进行中
-            </span>
-            <span className="text-sm text-zinc-500">目标：{exchange.goal.slice(0, 18)}…</span>
-          </div>
-          <div className="mt-4 flex items-center gap-6">
-            <div className="flex items-center gap-3">
-              <Avatar user={a} size={48} />
-              <div>
-                <div className="font-semibold">{a.name}</div>
-                <div className="text-xs text-zinc-500">教 {exchange.teachAB}</div>
+        {exchanges.map((e) => {
+          const a = getUser(e.a);
+          const b = getUser(e.b);
+          return (
+            <Link
+              key={e.id}
+              href={`/exchanges/${e.id}`}
+              className="glass glass-hover block rounded-3xl p-6"
+            >
+              <div className="flex items-center justify-between">
+                <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-300">
+                  进行中
+                </span>
+                <span className="text-sm text-zinc-500">
+                  目标：{e.goal.slice(0, 18)}…
+                </span>
               </div>
-            </div>
-            <div className="text-2xl text-violet-300">⇄</div>
-            <div className="flex items-center gap-3">
-              <Avatar user={b} size={48} />
-              <div>
-                <div className="font-semibold">{b.name}</div>
-                <div className="text-xs text-zinc-500">教 {exchange.teachBA}</div>
+              <div className="mt-4 flex items-center gap-6">
+                <div className="flex items-center gap-3">
+                  <Avatar user={a} size={48} />
+                  <div>
+                    <div className="font-semibold">{a.name}</div>
+                    <div className="text-xs text-zinc-500">教 {e.teachAB}</div>
+                  </div>
+                </div>
+                <div className="text-2xl text-violet-300">⇄</div>
+                <div className="flex items-center gap-3">
+                  <Avatar user={b} size={48} />
+                  <div>
+                    <div className="font-semibold">{b.name}</div>
+                    <div className="text-xs text-zinc-500">教 {e.teachBA}</div>
+                  </div>
+                </div>
               </div>
-            </div>
-          </div>
-        </Link>
+            </Link>
+          );
+        })}
 
         {/* 历史交换 */}
         <div className="glass rounded-3xl p-6 opacity-60">
@@ -51,9 +62,9 @@ export default function ExchangesPage() {
           </div>
           <div className="mt-4 flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <Avatar user={a} size={48} />
+              <Avatar user={getUser("alex")} size={48} />
               <div>
-                <div className="font-semibold">{a.name}</div>
+                <div className="font-semibold">Alex</div>
                 <div className="text-xs text-zinc-500">教 Python</div>
               </div>
             </div>

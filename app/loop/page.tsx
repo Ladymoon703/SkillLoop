@@ -1,17 +1,43 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { loops, getUser, getSkill, teachSkills, learnSkills } from "@/lib/data";
-
-type Node = { id: string; x: number; y: number };
-
-const nodes: Node[] = [
-  { id: "alex", x: 320, y: 90 },
-  { id: "mia", x: 100, y: 360 },
-  { id: "ken", x: 540, y: 360 },
-];
+import { loops, getUser, getSkill, teachSkills, learnSkills, type Loop } from "@/lib/data";
+import { useStore } from "@/lib/store";
 
 export default function LoopPage() {
-  const loop = loops[0];
-  const pos = Object.fromEntries(nodes.map((n) => [n.id, n]));
+  const { exchanges } = useStore();
+  const [loop, setLoop] = useState<Loop>(loops[0]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    fetch("/api/loop")
+      .then((r) => r.json())
+      .then((d) => {
+        if (!cancelled && d?.loop) setLoop(d.loop);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const members = loop.members;
+  const n = members.length || 1;
+  const cx = 320;
+  const cy = 230;
+  const r = 150;
+  const pos: Record<string, { x: number; y: number }> = {};
+  members.forEach((id, i) => {
+    const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+    pos[id] = { x: cx + r * Math.cos(angle), y: cy + r * Math.sin(angle) };
+  });
+  const primaryId = exchanges[0]?.id ?? "alex-mia";
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -20,7 +46,9 @@ export default function LoopPage() {
           ✦ 产品核心创新
         </span>
         <h1 className="mt-4 text-3xl font-bold sm:text-4xl">{loop.title}</h1>
-        <p className="mx-auto mt-3 max-w-2xl text-zinc-400">{loop.desc}</p>
+        <p className="mx-auto mt-3 max-w-2xl text-zinc-400">
+          {loading ? "AI 正在分析技能闭环…" : loop.desc}
+        </p>
       </div>
 
       {/* 关系图 */}
@@ -37,19 +65,16 @@ export default function LoopPage() {
           </defs>
 
           {/* 边 */}
-          {loop.edges.map((e) => {
+          {loop.edges.map((e, i) => {
             const f = pos[e.from];
             const t = pos[e.to];
-            const fx = e.from === "alex" ? f.x + 30 : e.from === "mia" ? f.x + 40 : f.x - 40;
-            const fy = e.from === "alex" ? f.y + 45 : f.y;
-            const tx = e.to === "alex" ? t.x - 30 : e.to === "mia" ? t.x + 40 : t.x - 40;
-            const ty = e.to === "alex" ? t.y + 45 : t.y;
-            const mx = (fx + tx) / 2;
-            const my = (fy + ty) / 2 + (e.from === "ken" || e.to === "ken" ? 24 : -8);
+            if (!f || !t) return null;
+            const mx = (f.x + t.x) / 2;
+            const my = (f.y + t.y) / 2 - 14;
             return (
-              <g key={e.skill}>
+              <g key={`${e.from}-${e.to}-${i}`}>
                 <line
-                  x1={fx} y1={fy} x2={tx} y2={ty}
+                  x1={f.x} y1={f.y} x2={t.x} y2={t.y}
                   stroke="url(#edge)" strokeWidth="3" markerEnd="url(#arrow)"
                   strokeLinecap="round"
                 />
@@ -65,32 +90,34 @@ export default function LoopPage() {
           })}
 
           {/* 节点 */}
-          {nodes.map((n) => {
-            const u = getUser(n.id);
-            const teach = teachSkills(n.id)[0];
-            const learn = learnSkills(n.id)[0];
-            const teachName = getSkill(teach.skillId).name;
-            const learnName = getSkill(learn.skillId).name;
+          {members.map((id) => {
+            const u = getUser(id);
+            const p = pos[id];
+            if (!p) return null;
+            const teach = teachSkills(id)[0];
+            const learn = learnSkills(id)[0];
+            const teachName = teach ? getSkill(teach.skillId).name : "";
+            const learnName = learn ? getSkill(learn.skillId).name : "";
             const w = 150;
             const h = 92;
-            const x = n.x - w / 2;
-            const y = n.y - h / 2;
+            const x = p.x - w / 2;
+            const y = p.y - h / 2;
             return (
-              <g key={n.id}>
+              <g key={id}>
                 <rect
                   x={x} y={y} width={w} height={h} rx={16}
                   fill="rgba(255,255,255,0.04)"
-                  stroke={n.id === "alex" ? "#a78bfa" : "rgba(255,255,255,0.15)"}
-                  strokeWidth={n.id === "alex" ? 1.5 : 1}
+                  stroke={id === members[0] ? "#a78bfa" : "rgba(255,255,255,0.15)"}
+                  strokeWidth={id === members[0] ? 1.5 : 1}
                 />
-                <text x={n.x} y={y + 26} textAnchor="middle" fontSize="22">{u.emoji}</text>
-                <text x={n.x} y={y + 44} textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff">
+                <text x={p.x} y={y + 26} textAnchor="middle" fontSize="22">{u.emoji}</text>
+                <text x={p.x} y={y + 44} textAnchor="middle" fontSize="14" fontWeight="700" fill="#fff">
                   {u.name}
                 </text>
-                <text x={n.x} y={y + 64} textAnchor="middle" fontSize="12" fill="#a78bfa">
+                <text x={p.x} y={y + 64} textAnchor="middle" fontSize="12" fill="#a78bfa">
                   教 {teachName}
                 </text>
-                <text x={n.x} y={y + 82} textAnchor="middle" fontSize="12" fill="#22d3ee">
+                <text x={p.x} y={y + 82} textAnchor="middle" fontSize="12" fill="#22d3ee">
                   想学 {learnName}
                 </text>
               </g>
@@ -101,11 +128,11 @@ export default function LoopPage() {
 
       {/* 解释 */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-        {loop.edges.map((e) => {
+        {loop.edges.map((e, i) => {
           const f = getUser(e.from);
           const t = getUser(e.to);
           return (
-            <div key={e.skill} className="glass rounded-2xl p-4 text-center">
+            <div key={`${e.from}-${e.to}-${i}`} className="glass rounded-2xl p-4 text-center">
               <div className="text-sm text-zinc-400">
                 {f.name} <span className="text-violet-300">教</span> {t.name}
               </div>
@@ -116,10 +143,10 @@ export default function LoopPage() {
       </div>
 
       <div className="mt-8 flex flex-col items-center gap-3">
-        <Link href="/exchanges/alex-mia" className="btn-primary rounded-xl px-8 py-3 font-semibold">
+        <Link href={`/exchanges/${primaryId}`} className="btn-primary rounded-xl px-8 py-3 font-semibold">
           加入这个交换闭环 →
         </Link>
-        <p className="text-xs text-zinc-500">三人各取所需，无需真实货币</p>
+        <p className="text-xs text-zinc-500">多人各取所需，无需真实货币</p>
       </div>
     </div>
   );

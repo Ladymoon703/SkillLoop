@@ -1,7 +1,9 @@
-import { getUser, currentUserId, txs } from "@/lib/data";
+"use client";
+
+import { useStore } from "@/lib/store";
 
 export default function CoinsPage() {
-  const me = getUser(currentUserId);
+  const { coin, txs, resetDemo } = useStore();
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-10">
@@ -10,7 +12,7 @@ export default function CoinsPage() {
         <div className="text-sm text-zinc-400">我的 Skill Coin</div>
         <div className="mt-2 flex items-center justify-center gap-3">
           <span className="text-4xl text-amber-300">●</span>
-          <span className="text-gradient text-6xl font-bold">{me.coin}</span>
+          <span className="text-gradient text-6xl font-bold">{coin}</span>
         </div>
         <p className="mt-3 text-sm text-zinc-500">虚拟积分，不涉及真实货币</p>
       </div>
@@ -35,7 +37,15 @@ export default function CoinsPage() {
 
       {/* 流水 */}
       <div className="glass mt-6 rounded-3xl p-6">
-        <h2 className="font-bold">积分流水</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="font-bold">积分流水</h2>
+          <button
+            onClick={resetDemo}
+            className="rounded-lg border border-white/10 px-3 py-1 text-xs text-zinc-400 transition-colors hover:border-white/25 hover:text-zinc-200"
+          >
+            重置演示数据
+          </button>
+        </div>
         <ul className="mt-4 space-y-2">
           {txs.map((t) => (
             <li
