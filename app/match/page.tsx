@@ -71,6 +71,12 @@ export default function MatchPage() {
                     </ul>
                   </div>
 
+                  {m.timeMatch.includes("线下") && (
+                    <div className="mt-3 rounded-xl border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+                      ⚠️ 首次线下交流建议选择公共场所
+                    </div>
+                  )}
+
                   <div className="mt-4 flex gap-3">
                     <Link
                       href="/exchanges/alex-mia"

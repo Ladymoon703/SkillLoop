@@ -4,6 +4,7 @@ import {
   teachSkills,
   learnSkills,
   badges,
+  ratings,
 } from "@/lib/data";
 import { Avatar, LevelBar, SkillTag } from "@/components/ui";
 
@@ -11,6 +12,7 @@ export default function PassportView({ userId }: { userId: string }) {
   const u = getUser(userId);
   const teach = teachSkills(userId);
   const learn = learnSkills(userId);
+  const received = ratings.filter((r) => r.to === userId);
   const isMe = userId === "alex";
 
   const stats = [
@@ -120,6 +122,36 @@ export default function PassportView({ userId }: { userId: string }) {
             ))}
           </div>
         </div>
+      </div>
+
+      {/* 收到的评价 */}
+      <div className="glass mt-6 rounded-3xl p-6">
+        <h2 className="font-bold">收到的评价</h2>
+        {received.length === 0 ? (
+          <p className="mt-3 text-sm text-zinc-500">还没有收到评价</p>
+        ) : (
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {received.map((r) => {
+              const from = getUser(r.from);
+              return (
+                <div key={r.exchangeId + r.from} className="rounded-2xl bg-white/[0.03] p-4">
+                  <div className="flex items-center gap-3">
+                    <Avatar user={from} size={36} />
+                    <div className="flex-1">
+                      <span className="font-semibold">{from.name}</span>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-zinc-400">
+                        <span>教学质量 {r.quality}★</span>
+                        <span>准时 {r.punctuality}★</span>
+                        <span>沟通 {r.communication}★</span>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm text-zinc-300">{r.comment}</p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {isMe && (

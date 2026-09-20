@@ -63,6 +63,16 @@ export type Loop = {
 export type Tx = { id: string; amount: number; desc: string; time: string };
 export type Badge = { name: string; icon: string; desc: string };
 
+export type Rating = {
+  exchangeId: string;
+  from: string;
+  to: string;
+  quality: number;
+  punctuality: number;
+  communication: number;
+  comment: string;
+};
+
 export const skills: Skill[] = [
   { id: "python", name: "Python", icon: "🐍", color: "#3b82f6" },
   { id: "coding", name: "编程", icon: "💻", color: "#6366f1" },
@@ -196,6 +206,19 @@ export const badges: Badge[] = [
   { name: "Python Mentor", icon: "🐍", desc: "累计完成 10 次 Python 教学" },
   { name: "Photography Learner", icon: "📷", desc: "摄影学习时长超过 10 小时" },
   { name: "Quick Starter", icon: "⚡", desc: "24 小时内完成首次交换" },
+];
+
+export const ratings: Rating[] = [
+  { exchangeId: "alex-mia", from: "mia", to: "alex", quality: 5, punctuality: 5, communication: 4, comment: "Python 讲得特别清楚，环境搭建一次就通了，很有耐心！" },
+  { exchangeId: "alex-mia", from: "alex", to: "mia", quality: 5, punctuality: 4, communication: 5, comment: "构图讲得很细致，第一次拍出了满意的照片。" },
+  { exchangeId: "alex-ken", from: "ken", to: "alex", quality: 5, punctuality: 5, communication: 5, comment: "爬虫入门全靠 Alex 带，思路清晰又实用。" },
+];
+
+export const coachSuggestions: string[] = [
+  "本周你已按时完成 2 个任务，节奏很好，继续保持。",
+  "摄影练习建议多拍逆光人像，能快速提升对光线的感知。",
+  "把 Python 文件处理用到照片整理上，学以致用效率翻倍。",
+  "周末前完成「三分法拍照」作业，周日让 Mia 点评。",
 ];
 
 export type Match = {

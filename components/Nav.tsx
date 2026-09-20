@@ -11,6 +11,7 @@ const links = [
   { href: "/match", label: "AI匹配" },
   { href: "/loop", label: "SkillLoop", badge: true },
   { href: "/exchanges", label: "我的交换" },
+  { href: "/coach", label: "AI教练" },
   { href: "/passport", label: "Passport" },
 ];
 
@@ -52,11 +53,14 @@ export default function Nav() {
           })}
         </nav>
 
-        <div className="hidden shrink-0 items-center gap-2 rounded-full glass px-3 py-1.5 text-sm sm:flex">
+        <Link
+          href="/coins"
+          className="hidden shrink-0 items-center gap-2 rounded-full glass px-3 py-1.5 text-sm transition-colors hover:border-white/20 sm:flex"
+        >
           <span className="text-amber-300">●</span>
           <span className="font-semibold">{me.coin}</span>
           <span className="text-zinc-400">Coin</span>
-        </div>
+        </Link>
       </div>
     </header>
   );
